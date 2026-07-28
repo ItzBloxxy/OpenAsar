@@ -1,23 +1,21 @@
-# OpenAsar &nbsp;<sup><sub>
-![Nightly Status](https://github.com/GooseMod/OpenAsar/actions/workflows/nightly.yml/badge.svg) [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)]([https://choosealicense.com/licenses/agpl/l](https://choosealicense.com/licenses/agpl-3.0/))
+# OpenAsar
 
-**An open-source alternative of Discord desktop's `app.asar`**
+![Nightly Status](https://github.com/GooseMod/OpenAsar/actions/workflows/nightly.yml/badge.svg) [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://choosealicense.com/licenses/agpl-3.0/)
+
+An open-source alternative to Discord desktop's `app.asar`.
 
 ## Features
-- **:rocket: Startup Speed**: ~2x faster startup times (up to ~4x with experimental config)
-- **:chart_with_upwards_trend: Performance**: OpenAsar can make your client feel snappier (scrolling, switching channels, etc)
-- **:paintbrush: Splash Theming**: Easy theming for your splash which works with most themes for any client mod
-- **:electric_plug: Drop-in**: Replace one file and it's installed, that's it (same with uninstall)
-- **:gear: Configurable**: Adds many config options for Discord and OpenAsar enhancements (see config section)
-- **:cloud: Lightweight**: <1% of Discord's original size (9 MB -> ~50 kB)
-- **:shield: No Tracking**: Removes Discord's built-in tracking for crashes and errors in the asar (not app itself)
+- Startup speed: ~2x faster (up to ~4x with experimental config)
+- Performance: smoother scrolling, channel switching, etc
+- Splash theming: works with most client mod themes
+- Drop-in: replace one file to install, same to uninstall
+- Configurable: extra options for Discord and OpenAsar
+- Lightweight: <1% of Discord's original size (9 MB → ~50 kB)
+- No tracking: removes Discord's built-in crash/error tracking from the asar
 
-### See [FAQ](faq.md) for more details
-
-<br>
+See [FAQ](faq.md) for more.
 
 ## [Install Guide](https://github.com/GooseMod/OpenAsar/wiki/Install-Guide)
-
 
 ## Config
 You can configure OpenAsar by clicking the "OpenAsar..." version info in the bottom of your settings sidebar, which will open the config window.
