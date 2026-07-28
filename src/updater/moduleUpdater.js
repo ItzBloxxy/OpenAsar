@@ -2,8 +2,7 @@ const { join } = require('path');
 const fs = require('fs');
 const Module = require('module');
 const { execFile } = require('child_process');
-const { app, autoUpdater } = require('electron');
-const { get } = require('https');
+const { app, autoUpdater, net } = require('electron');
 
 const paths = require('../paths');
 const buildInfo = require('../utils/buildInfo');
@@ -33,19 +32,23 @@ const resetTracking = () => {
   installing = Object.assign({}, base);
 };
 
-const req = url => new Promise(res => get(url, r => { // Minimal wrapper around https.get to include body
-  let dat = '';
-  r.on('data', b => dat += b.toString());
+const req = url => new Promise((res, rej) => {
+  const request = net.request(url);
+  request.on('response', r => {
+    let dat = '';
+    r.on('data', b => dat += b.toString());
+    r.on('end', () => res([ r, dat ]));
+  });
+  request.on('error', rej);
+  request.end();
+});
 
-  r.on('end', () => res([ r, dat ]));
-}));
-
-const redirs = url => new Promise(res => get(url, r => { // Minimal wrapper around https.get to follow redirects
-  const loc = r.headers.location;
-  if (loc) return redirs(loc).then(res);
-
-  res(r);
-}));
+const redirs = url => new Promise((res, rej) => { // net.request follows redirects automatically
+  const request = net.request(url);
+  request.on('response', r => res(r));
+  request.on('error', rej);
+  request.end();
+});
 
 exports.init = (endpoint, { releaseChannel, version }) => {
   const local = buildInfo.localModulesRoot;
@@ -82,7 +85,7 @@ exports.init = (endpoint, { releaseChannel, version }) => {
         if (r.statusCode === 204) return this.emit('update-not-available');
 
         this.emit('update-manually', b);
-      });
+      }).catch(e => this.emit('error', e));
     }
 
     quitAndInstall() {
@@ -112,7 +115,12 @@ exports.init = (endpoint, { releaseChannel, version }) => {
 };
 
 const checkModules = async () => {
-  remote = JSON.parse((await req(baseUrl + '/versions.json' + qs))[1]);
+  try {
+    remote = JSON.parse((await req(baseUrl + '/versions.json' + qs))[1]);
+  } catch (e) {
+    log('Modules', 'Failed to check modules', e);
+    return downloading.total;
+  }
 
   for (const name in installed) {
     const inst = installed[name].installedVersion;
@@ -137,7 +145,18 @@ const downloadModule = async (name, ver) => {
   // log('Modules', 'Downloading', `${name}@${ver}`);
 
   let success, total, cur =  0;
-  const res = await redirs(baseUrl + '/' + name + '/' + ver + qs);
+  let res;
+  try {
+    res = await redirs(baseUrl + '/' + name + '/' + ver + qs);
+  } catch (e) {
+    log('Modules', 'Failed to download module', name, e);
+    downloading.fail++;
+    events.emit('downloaded-module', { name });
+    downloading.done++;
+    if (downloading.done === downloading.total) events.emit('downloaded', { failed: downloading.fail });
+    return;
+  }
+
   success = res.statusCode === 200;
   total = parseInt(res.headers['content-length'] ?? 1, 10);
 
@@ -252,15 +271,22 @@ exports.checkForUpdates = async () => {
 
   let p = [];
   if (!skipHost) {
-    p.push(new Promise((res) => host.once('update-not-available', res)));
+    p.push(new Promise((res) => {
+      host.once('update-not-available', res);
+      host.once('error', res);
+    }));
     host.checkForUpdates();
   }
 
-  if (!skipModule) p.push(checkModules());
+  if (!skipModule) p.push(checkModules().catch(() => 0));
 
-  done({
-    count: (await Promise.all(p)).pop()
-  });
+  try {
+    done({
+      count: (await Promise.all(p)).pop()
+    });
+  } catch (e) {
+    done({ failed: true });
+  }
 };
 
 exports.quitAndInstallUpdates = () => host.quitAndInstall();
