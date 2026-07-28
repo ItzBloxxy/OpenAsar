@@ -23,7 +23,7 @@ module.exports = async () => { // (Try) update asar
 
   await new Promise(done => res.on('end', () => {
     const buf = Buffer.concat(data);
-    if (!buf.toString('hex').startsWith('04000000')) return log('AsarUpdate', 'Download error'); // Not like ASAR header
+    if (buf.length < 4 || buf.readUInt32LE(0) !== 4) return log('AsarUpdate', 'Download error'); // Not like ASAR header
 
     fs.writeFile(join(__filename, '..'), buf, e => {
       log('AsarUpdate', 'Downloaded', e ?? '');
